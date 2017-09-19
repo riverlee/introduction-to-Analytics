@@ -1,0 +1,111 @@
+---
+title: "R regression"
+author: "Jiang Li"
+date: "9/12/2017"
+output: slidy_presentation
+---
+
+## Introduction 
+
+http://www.stephansorger.com/content/DataScience_7_Case_realdata.pdf
+
+You are the data scientist at Acme Realty, a real estate company specializing in listings in upscale
+Hillsborough, California. Senior management has asked you to build a predictive sales model using R.
+
+You have two sets of data at your disposal:
+
+-  DataScience_7_Case_realdata.xls: Shows details of recent home sales, including the sales price, the
+house size in square feet, the lot size in square feet, and the numbers of bedrooms and bathrooms.
+-  DataScience_7_Case_TimeSeries.xls: Shows the average home sales price for every quarter from
+January 2008 through August 2010.
+
+
+To be thorough, you plan to build two regression-based predictive models in R. The first will use time series
+regression to forecast future sales, based on historic sales. The second will use multivariate regression to
+forecast sales prices based on the house size and lot size. 
+
+
+## Load data
+
+```{r,warning=FALSE}
+library(readxl)
+## Read time series dataset
+time.df = read_excel(path = "DataScience_7_Case_TimeSeries.xls",sheet = "Sheet1")
+dim(time.df)
+head(time.df)
+
+## Read the house dataset with sale, size and lot
+sale.df = read_excel(path = "DataScience_7_Case_realdata.xls")
+dim(sale.df)
+sale.df
+
+```
+
+
+
+## Forecast sales for 2011
+
+Using the regression analysis capability in R, forecast home sales for 2011. Use the TimeSeries dataset. State the governing equation.
+
+```{r forcast,warning=FALSE}
+library(ggplot2)
+ggplot(data = time.df,aes(x = Date,y = `Price ($M)`)) + 
+  geom_bar(stat = "identity",fill='grey') +
+  geom_point(color="blue")+
+  geom_line(color='red')+
+  ggtitle("Sale price from years 2008 to 2010")
+
+fit = lm(formula = `Price ($M)`~Date,data=time.df)
+summary(fit)
+
+## Replot with fitted line
+ggplot(data = time.df,aes(x = Date,y = `Price ($M)`)) + 
+  geom_bar(stat = "identity",fill='grey') +
+  geom_point(color="blue")+
+  geom_line(color='red')+
+  geom_abline(slope = fit$coefficients[2],intercept = fit$coefficients[1],color = 'purple')+ ## Added regression line
+  geom_smooth(method='lm',color='purple',fill='green')+ ## Added shade
+  ggtitle("Sale price from years 2008 to 2010\n(Purple is the regression line)")
+
+d.2011 = data.frame(Date=2011)
+predict.2011 = predict(fit,d.2011)
+
+cat("Forecast sale price for 2011 is $",round(predict.2011,2),"M",sep = "")
+```
+
+## Forecast price basd on size and lot size
+
+Using the regression analysis capability in R, forecast the price for a house size of 4000 square feet and a lot size of 22000 square feet. State the governing equation. Use the realdata dataset.
+
+```{r,warning=FALSE}
+library(scatterplot3d)
+## view the data
+scatterplot3d(x = sale.df$House,sale.df$Lot,sale.df$Price,
+              xlab = "House size (1000 square feet)",
+              ylab = "Lot size (1000 square feet)",
+              zlab = "Price ($M)",
+              main="Sale price vs house and lot size",highlight.3d=TRUE,type="h")
+
+
+## built model
+fit2 = lm(formula = Price~House+Lot,data = sale.df)
+summary(fit2)
+
+s3d = scatterplot3d(x = sale.df$House,sale.df$Lot,sale.df$Price,
+              xlab = "House size (1000 square feet)",
+              ylab = "Lot size (1000 square feet)",
+              zlab = "Price ($M)",
+              main="Sale price vs house and lot size",highlight.3d=TRUE,type = "h",zlim=c(0,20),xlim=c(0,10),ylim=c(0,90))
+s3d$plane3d(fit2)
+
+xx = data.frame("House"=4,"Lot"=22)
+pp = predict(object = fit2,xx)
+
+cat("2011.Forecast sale price for a house with 4000 sf and 22000 sf lot is $",round(pp,2),"M",sep = "")
+
+```
+
+
+
+
+
